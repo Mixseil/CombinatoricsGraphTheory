@@ -1,0 +1,86 @@
+#include <iostream>
+#include <vector>
+#include <limits>
+
+class Graph {
+public:
+    int V;
+    std::vector<std::vector<int>> graph;
+
+    Graph(int Verts) {
+        V = Verts;
+        graph.resize(Verts, std::vector<int>(Verts, 0));
+    }
+
+    void AddAdge(int x, int y, int z) {
+        graph[x][y] = z;
+    }
+
+    bool bfs(int s, int t, std::vector<int>& parent) {
+        std::vector<bool> visited(V, false);
+        std::vector<int> Queue;
+        Queue.push_back(s);
+        visited[s] = true;
+
+        while (!Queue.empty()) {
+            int u = Queue.front();
+            Queue.erase(Queue.begin());
+
+            for (int ind = 0; ind < graph[u].size(); ind++) {
+                int val = graph[u][ind];
+                if (!visited[ind] && val > 0) {
+                    Queue.push_back(ind);
+                    visited[ind] = true;
+                    parent[ind] = u;
+
+                    if (ind == t) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    int FordFulkerson(int Source, int Sink) {
+        std::vector<int> Parent(V, -1);
+        int MaxFlow = 0;
+        while (bfs(Source, Sink, Parent)) {
+            int PathFlow = std::numeric_limits<int>::max();
+            int s = Sink;
+            while (s != Source) {
+                PathFlow = std::min(PathFlow, graph[Parent [s]][s]);
+                s = Parent[s];
+            }
+            int v = Sink;
+            while (v != Source) {
+                int u = Parent[v];
+                graph[u][v] -= PathFlow;
+                graph[v][u] += PathFlow;
+                v = Parent [v];
+            }
+            MaxFlow += PathFlow;
+        }
+        return MaxFlow;
+    }
+};
+
+int main() {
+    int Source = 0;
+    int Sink = 5;
+    Graph a(6);
+    a.AddAdge(0, 1, 10);
+    a.AddAdge(0, 2, 10);
+    a.AddAdge(1, 3, 4);
+    a.AddAdge(1, 4, 8);
+    a.AddAdge(2, 4, 9);
+    a.AddAdge(1, 2, 2);
+    a.AddAdge(4, 3, 6);
+    a.AddAdge(4, 5, 10);
+    a.AddAdge(3, 5, 10);
+
+    std::cout << a.FordFulkerson(Source, Sink) << std::endl;
+
+    return 0;
+}
