@@ -1,0 +1,218 @@
+#include <iostream>
+#include <vector>
+#include <map>
+#include <algorithm>
+#include <tuple>
+#include <windows.h>
+
+
+class Graph {
+private:
+    std::vector<std::tuple<int, int, std::string>> Edges;  // Список рёбер
+    std::vector<std::pair<int, int>> Arcs;  // Список дуг
+    std::map<int, std::vector<int>> Neighbors;  // Словарь смежности
+    std::map<int, std::vector<std::pair<int, std::string>>> ABundles;  // Словарь пучков дуг
+
+public:
+    Graph() {}
+
+    void AddVertex(int vertex)
+    {
+        if (!HasVertex(vertex))
+        {
+            Neighbors[vertex] = std::vector<int>();
+            ABundles[vertex] = std::vector<std::pair<int, std::string>>();
+            std::cout << "Вершина " << vertex << " добавлена в граф" << std::endl;
+        }
+    }
+
+    void AddEdge(int u, int v, const std::string& weight = "0") {
+        if (!HasVertex(u))
+        {
+            Neighbors[u] = std::vector<int>();
+        }
+        if (!HasVertex(v))
+        {
+            Neighbors[v] = std::vector<int>();
+        }
+
+        Edges.push_back(std::make_tuple(u, v, weight));
+        Arcs.push_back(std::make_pair(u, v));
+        Neighbors[u].push_back(v);
+        ABundles[u].push_back(std::make_pair(v, weight));
+        std::cout << "Ребро " << u << " -> " << v << " весом " << weight << " добавлено в граф" << std::endl;
+    }
+
+    void RemoveEdge(int u, int v, const std::string& weight = "") {
+        auto it = std::find(Edges.begin(), Edges.end(), std::make_tuple(u, v, weight));
+        if (it != Edges.end()) {
+            Edges.erase(it);
+            Arcs.erase(std::find(Arcs.begin(), Arcs.end(), std::make_pair(u, v)));
+
+            auto& neighbors = Neighbors[u];
+            neighbors.erase(std::remove(neighbors.begin(), neighbors.end(), v), neighbors.end());
+
+            auto& bundles = ABundles[u];
+            bundles.erase(
+                std::remove(bundles.begin(), bundles.end(), std::make_pair(v, weight)),
+                bundles.end()
+            );
+
+            std::cout << "Ребро " << u << " -> " << v << " весом " << weight << " удалено из графа" << std::endl;
+        }
+        else {
+            std::cout << "Ребро " << u << " -> " << v << " весом " << weight << " не найдено для удаления" << std::endl;
+        }
+    }
+
+    bool HasVertex(int vertex) {
+        return Neighbors.find(vertex) != Neighbors.end();
+    }
+
+    std::vector<int> GetNeighbors(int vertex) {
+        return Neighbors[vertex];
+    }
+
+    std::vector<std::pair<int, std::string>> GetArcBundle(int vertex) {
+        return ABundles[vertex];
+    }
+
+    void RemoveVertex(int vertex) {
+        if (HasVertex(vertex)) {
+            Neighbors.erase(vertex);
+            for (auto& pair : Neighbors) {
+                auto& neighbors = pair.second;
+                neighbors.erase(std::remove(neighbors.begin(), neighbors.end(), vertex), neighbors.end());
+            }
+
+            ABundles.erase(vertex);
+
+            Edges.erase(
+                std::remove_if(Edges.begin(), Edges.end(),
+                    [vertex](const auto& edge) {
+                        return std::get<0>(edge) == vertex || std::get<1>(edge) == vertex;
+                    }
+                ),
+                Edges.end()
+            );
+
+            Arcs.erase(
+                std::remove_if(Arcs.begin(), Arcs.end(),
+                    [vertex](const auto& arc) {
+                        return arc.first == vertex || arc.second == vertex;
+                    }
+                ),
+                Arcs.end()
+            );
+
+            for (auto& pair : ABundles) {
+                auto& bundles = pair.second;
+                bundles.erase(
+                    std::remove_if(bundles.begin(), bundles.end(),
+                        [vertex](const auto& bundle) {
+                            return bundle.first == vertex;
+                        }
+                    ),
+                    bundles.end()
+                );
+            }
+
+            std::cout << "Вершина " << vertex << " и все её рёбра удалены из графа" << std::endl;
+        }
+        else {
+            std::cout << "Вершина " << vertex << " не найдена для удаления" << std::endl;
+        }
+    }
+
+    void FindVertex(int vertex) {
+        if (HasVertex(vertex)) {
+            std::cout << "\nВершина " << vertex << " найдена в графе" << std::endl;
+        }
+        else {
+            std::cout << "\nВершина " << vertex << " не найдена в графе" << std::endl;
+        }
+    }
+
+    void FindEdge(int u, int v, const std::string& weight = "") {
+        auto it = std::find(Edges.begin(), Edges.end(), std::make_tuple(u, v, weight));
+        if (it != Edges.end()) {
+            std::cout << "Ребро " << u << " -> " << v << " весом " << weight << " найдено в графе" << std::endl;
+        }
+        else {
+            std::cout << "Ребро " << u << " -> " << v << " весом " << weight << " не найдено в графе" << std::endl;
+        }
+    }
+
+    void PrintGraph() {
+        std::cout << "Список рёбер:" << std::endl;
+        for (const auto& edge : Edges) {
+            std::cout << "  " << std::get<0>(edge) << " -> " << std::get<1>(edge)
+                << "  (вес: " << std::get<2>(edge) << ")" << std::endl;
+        }
+
+        std::cout << "\nСписок дуг:" << std::endl;
+        for (const auto& arc : Arcs) {
+            std::cout << "  " << arc.first << " -> " << arc.second << std::endl;
+        }
+
+        std::cout << "\nСловарь смежности:" << std::endl;
+        for (const auto& pair : Neighbors) {
+            std::cout << "  " << pair.first << ": ";
+            for (size_t i = 0; i < pair.second.size(); ++i) {
+                if (i > 0) std::cout << ", ";
+                std::cout << pair.second[i];
+            }
+            std::cout << std::endl;
+        }
+
+        std::cout << "\nСловарь пучков дуг:" << std::endl;
+        for (const auto& pair : ABundles) {
+            std::cout << "  " << pair.first << ": ";
+            for (size_t i = 0; i < pair.second.size(); ++i) {
+                if (i > 0) std::cout << ", ";
+                std::cout << pair.second[i].first << "  (вес: " << pair.second[i].second << ")";
+            }
+            std::cout << std::endl;
+        }
+    }
+};
+
+void Separator() {
+    std::cout << std::string(30, '~') << std::endl;
+}
+
+int main() {
+    setlocale(LC_ALL, "Rus");
+    Graph graph;
+
+    graph.AddEdge(1, 2, "a");
+    graph.AddEdge(2, 3, "b");
+    graph.AddEdge(2, 5, "c");
+    graph.AddEdge(5, 6, "d");
+    graph.AddEdge(3, 5, "e");
+    graph.AddEdge(6, 7, "f");
+    graph.AddEdge(7, 1, "g");
+    graph.AddEdge(4, 4, "s");
+
+    graph.PrintGraph();
+
+    Separator();
+
+    graph.AddVertex(8);
+    graph.AddEdge(3, 4, "t");
+    graph.RemoveVertex(7);
+    graph.FindVertex(6);
+    graph.FindEdge(2, 5, "c");
+
+    Separator();
+
+    graph.PrintGraph();
+
+    Separator();
+
+    graph.AddEdge(8, 1, "k");
+    graph.PrintGraph();
+
+   
+    return 0;
+}
