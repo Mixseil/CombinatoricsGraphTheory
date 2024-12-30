@@ -1,0 +1,97 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <string>
+#include <algorithm>
+
+class Graph {
+private:
+    std::vector<std::vector<int>> graph;
+    int num_vector; 
+
+    int Check(const std::vector<int>& list, const std::vector<int>& cnt_vist) {
+        for (int i = 0; i < list.size(); i++) {
+            if (cnt_vist[list[i]] == 0) return list[i];
+        }
+        return -1;
+    }
+
+public:
+    Graph(const std::vector<std::vector<int>>& graph) : graph(graph), num_vector(graph.size()) {}
+
+    void BFS(int begin, std::vector<int>& cnt_vist) {
+        std::queue<int> queue;
+        std::vector<int> showvisited;
+        int current = begin;
+        showvisited.push_back(current);
+        int test = Check(graph[current], cnt_vist);
+        cnt_vist[current] = 0;
+
+        while (!queue.empty() || test != -1) {
+            std::vector<int> listinc;
+            for (int x : graph[current]) {
+                if (cnt_vist[x] == 0 && 
+                    std::find(queue._Get_container().begin(), queue._Get_container().end(), x) == queue._Get_container().end() && 
+                    x != begin) {
+                    listinc.push_back(x);
+                }
+            }
+
+            for (int cnt : listinc) {
+                cnt_vist[cnt] = cnt_vist[current] + 1;
+            }
+
+            for (int x : listinc) {
+                queue.push(x);
+            }
+
+            if (!queue.empty()) {
+                current = queue.front();
+                queue.pop();
+                showvisited.push_back(current);
+                test = Check(graph[current], cnt_vist);
+            }
+            else {
+                break;
+            }
+        }
+
+        std::cout << "[";
+        for (size_t i = 0; i < showvisited.size(); ++i) {
+            std::cout << showvisited[i];
+            if (i < showvisited.size() - 1) std::cout << ", ";
+        }
+        std::cout << "]" << std::endl;
+    }
+};
+
+int main() {
+    std::vector<std::vector<int>> graphlist = {
+        {0, 5},
+        {1, 4, 8},
+        {0, 6},
+        {1},
+        {1, 3, 5},
+        {2, 3},
+        {3},
+        {3, 9},
+        {1},
+        {8}
+    };
+
+    Graph graph(graphlist);
+    std::vector<int> cnt_vist(graphlist.size(), 0);
+
+    std::cout << "~~~~~~BFS~~~~~~~" << std::endl;
+    graph.BFS(1, cnt_vist);
+
+    std::cout << "[";
+    for (size_t i = 0; i < cnt_vist.size(); ++i) {
+        std::cout << cnt_vist[i];
+        if (i < cnt_vist.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+
+    std::cin.get();
+    return 0;
+}
